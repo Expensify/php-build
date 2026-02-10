@@ -1,34 +1,33 @@
 #!/usr/bin/env bash
 
-PHP="$PREFIX/bin/php"
-
 install_composer() {
-    download_composer
-    copy_composer_phar
 
-    log Composer "Installing executable in $PREFIX/bin/composer"
-
-    mv "$PREFIX/bin/composer.phar" "$PREFIX/bin/composer"
-
-    chmod +x "$PREFIX/bin/composer"
-}
-
-download_composer() {
     local composer_url="$1"
+    local composer_path="$PREFIX/bin/composer"
 
-    if [ -z "$composer_url" ]; then
-        composer_url="https://getcomposer.org/download/2.2.21/composer.phar"
+    if [[ -z "$composer_url" ]]; then
+        composer_url="https://getcomposer.org/download/latest-stable/composer.phar"
     fi
 
-    if [ ! -f "$PHP_BUILD_TMPDIR/packages/composer.phar" ]; then
-        log Composer "Downloading from $composer_url"
-        wget -O "$PHP_BUILD_TMPDIR/packages/composer.phar" $composer_url
-    else
-        log Composer "self updating in $PHP_BUILD_TMPDIR/packages/composer.phar"
-        $PHP $PHP_BUILD_TMPDIR/packages/composer.phar self-update
-    fi
-}
+    log Composer "Downloading from $composer_url"
 
-copy_composer_phar() {
-    yes | cp "$PHP_BUILD_TMPDIR/packages/composer.phar" "$PREFIX/bin/composer.phar"
+    if [[ ! -d "$PREFIX/bin" ]] ; then
+        mkdir -p "$PREFIX/bin"
+    fi
+    if [[ -f "$composer_path" ]] ; then
+        rm -f "$composer_path"
+    fi
+
+    curl -sS "$composer_url" -o "$composer_path"
+    if [[ $? -ne 0 ]] ; then
+      wget -q -O "$composer_path" "$composer_url"
+      if [[ $? -ne 0 ]] ; then
+        log Composer "You don't have curl nor wget."
+        exit 2
+      fi
+    fi
+
+    chmod +x "$composer_path"
+
+    log Composer "Downloaded."
 }
